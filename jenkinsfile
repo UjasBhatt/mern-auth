@@ -1,23 +1,33 @@
-node {    
-      def app     
-      stage('Clone repository') {               
-             
-            checkout scm    
-      }     
-      stage('Build image') {         
-       
-            app = docker.build("mern-auth/test")    
-       }     
-      stage('Test image') {           
-            app.inside {            
-             
-             sh 'echo "Tests passed"'        
-            }    
-        }     
-       stage('Push image') {
-                                                  docker.withRegistry('https://registry.hub.docker.com', 'git') {            
-       app.push("${env.BUILD_NUMBER}")            
-       app.push("latest")        
-              }    
-           }
+pipeline {
+    agent any
+    
+    stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/UjasBhatt/mern-auth.gitt'
+            }
         }
+        stage('Build') {
+            steps {
+                sh 'npm install'
+                sh 'npm run build'
+            }
+        }
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    docker.build('ujasbhatt10/react-demo-app:${env.BUILD_NUMBER}')
+                }
+            }
+        }
+        stage('Push Docker Image to DockerHub') {
+            steps {
+                script {
+                    docker.withRegistry('https://index.docker.io/v1/', 'dockerhub-credentials') {
+                        docker.image("<<yourusername/react-demo-app>>:${env.BUILD_NUMBER}").push('latest')
+                    }
+                }
+            }
+        }
+    }
+}
